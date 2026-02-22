@@ -19,7 +19,7 @@ public class ArtistEntity {
     private String name;
     private String bio;
     private String imageUrl;
-    private Long genreId;
+    private String genre; // Changed to store genre name directly
     private String country;
     private String language;
     private Long followersCount;

@@ -22,63 +22,70 @@ import java.util.Random;
 @Slf4j
 public class LocalArtistSeeder implements CommandLineRunner {
 
-    private final ArtistRepository artistRepository;
-    private final GenreRepository genreRepository;
-    private final Faker faker = new Faker();
-    private final Random random = new Random();
+        private final ArtistRepository artistRepository;
+        private final GenreRepository genreRepository;
+        private final Faker faker = new Faker();
+        private final Random random = new Random();
 
-    private static final int ARTIST_COUNT = 50;
+        private static final int ARTIST_COUNT = 50;
 
-    @Override
-    public void run(String... args) {
-        log.info("LocalArtistSeeder execution started.");
-        genreRepository.count()
-                .flatMap(count -> {
-                    if (count > 0) {
-                        log.info("Artist database already seeded.");
-                        return Mono.empty();
-                    }
-                    log.info("Seeding genres and artists...");
-                    return seedGenres().then(seedArtists());
-                })
-                .subscribe();
-    }
+        @Override
+        public void run(String... args) {
+                log.info("LocalArtistSeeder execution started.");
+                genreRepository.count()
+                                .flatMap(count -> {
+                                        if (count > 0) {
+                                                log.info("Artist database already seeded.");
+                                                return Mono.empty();
+                                        }
+                                        log.info("Seeding genres and artists...");
+                                        return seedGenres().then(seedArtists());
+                                })
+                                .subscribe();
+        }
 
-    private Mono<Void> seedGenres() {
-        List<String> genreNames = List.of(
-                "Reguetón", "Salsa", "Vallenato", "Merengue", "Bachata",
-                "Pop", "Rock", "Trap", "Hispano", "Urbano", "Jazz", "Electronics");
+        private Mono<Void> seedGenres() {
+                List<String> genreNames = List.of(
+                                "Reguetón", "Salsa", "Vallenato", "Merengue", "Bachata",
+                                "Pop", "Rock", "Trap", "Hispano", "Urbano", "Jazz", "Electronics");
 
-        return genreRepository.saveAll(
-                genreNames.stream()
-                        .map(name -> GenreEntity.builder().name(name).build())
-                        .toList())
-                .then();
-    }
+                return genreRepository.saveAll(
+                                genreNames.stream()
+                                                .map(name -> GenreEntity.builder().name(name).build())
+                                                .toList())
+                                .then();
+        }
 
-    private Mono<Void> seedArtists() {
-        return genreRepository.findAll().collectList()
-                .flatMap(genres -> {
-                    return Flux.range(1, ARTIST_COUNT)
-                            .flatMap(i -> {
-                                String name = faker.artist().name();
-                                Long genreId = genres.isEmpty() ? null
-                                        : genres.get(random.nextInt(genres.size())).getId();
+        private Mono<Void> seedArtists() {
+                return genreRepository.findAll().collectList()
+                                .flatMap(genres -> {
+                                        return Flux.range(1, ARTIST_COUNT)
+                                                        .flatMap(i -> {
+                                                                String name = faker.artist().name();
+                                                                String genreName = genres.isEmpty() ? null
+                                                                                : genres.get(random
+                                                                                                .nextInt(genres.size()))
+                                                                                                .getName();
 
-                                ArtistEntity artist = ArtistEntity.builder()
-                                        .name(name)
-                                        .bio(faker.lorem().paragraph())
-                                        .imageUrl("https://i.pravatar.cc/300?u=" + name.replace(" ", ""))
-                                        .genreId(genreId)
-                                        .country(faker.address().country())
-                                        .language(random.nextBoolean() ? "English" : "Spanish")
-                                        .followersCount((long) faker.number().numberBetween(100, 1000000))
-                                        .currentStars(random.nextInt(101))
-                                        .goalStars(100)
-                                        .build();
-                                return artistRepository.save(artist);
-                            })
-                            .then();
-                });
-    }
+                                                                ArtistEntity artist = ArtistEntity.builder()
+                                                                                .name(name)
+                                                                                .bio(faker.lorem().paragraph())
+                                                                                .imageUrl("https://i.pravatar.cc/300?u="
+                                                                                                + name.replace(" ", ""))
+                                                                                .genre(genreName)
+                                                                                .country(faker.address().country())
+                                                                                .language(random.nextBoolean()
+                                                                                                ? "English"
+                                                                                                : "Spanish")
+                                                                                .followersCount((long) faker.number()
+                                                                                                .numberBetween(100,
+                                                                                                                1000000))
+                                                                                .currentStars(random.nextInt(101))
+                                                                                .goalStars(100)
+                                                                                .build();
+                                                                return artistRepository.save(artist);
+                                                        })
+                                                        .then();
+                                });
+        }
 }
